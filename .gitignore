@@ -2,7 +2,7 @@
 .debug.log
 developement.test.py
 
-\venv
-\env
-\chat_app_venv
-\media
+venv/
+env/
+chat_app_venv/
+/media/users/profile_images/
