@@ -32,8 +32,10 @@ class UsersList(generics.ListAPIView):
         
         query = self.request.query_params.get('query', None)
         if query:
-            pattern = re.compile(re.escape(query), re.IGNORECASE)
-            if pattern.search(user.first_name) or pattern.search(user.last_name):
+            words = query.replace(" ", "")
+            username = user.first_name + user.last_name
+            pattern = re.compile(re.escape(words), re.IGNORECASE)
+            if pattern.search(username) or pattern.search(username):
                 return user
             return None
         return user
