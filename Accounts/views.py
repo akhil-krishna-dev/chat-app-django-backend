@@ -98,9 +98,12 @@ def change_profile_image(request):
 
     if 'image' in request.FILES:
         user.image = request.FILES['image']
-        print(request.FILES['image'])
         user.save()
-        return Response({"message":"image changed successfully"}, status=status.HTTP_200_OK)
+        data = {
+            "message":"image changed successfully",
+            "image":user.image.url
+        }
+        return Response(data, status=status.HTTP_200_OK)
     return Response({"message":"no image in request"}, status=status.HTTP_400_BAD_REQUEST)
 
 

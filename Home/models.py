@@ -1,5 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_save,m2m_changed
+from django.dispatch import receiver
+
 
 User = get_user_model()
 
@@ -9,6 +12,8 @@ class Chat(models.Model):
 
     def __str__(self):
         return str(self.pk) + " " + str(self.participants.all())
+    
+    
     
 
 class Message(models.Model):
@@ -24,4 +29,19 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.chat.id} {self.sender}"
     
+    
+
+# signals
+@receiver(m2m_changed, sender=Chat.participants.through)
+def create_chat_creation_method(sender, instance,action,**kwargs):
+    if action == 'post_add':
+        if instance.participants.exists():
+            sender_user = instance.participants.first()
+            Message.objects.create(
+                chat=instance,
+                sender=sender_user,
+                content="You are now connected with ",
+                status="chat created"
+            )
+
 

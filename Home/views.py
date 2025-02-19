@@ -190,7 +190,6 @@ class ChatViewSet(viewsets.ModelViewSet):
                 pass
             except Exception as e:
                 raise e
-
         return Response({"message":"all messages changed as seen"})
 
     @action(detail=False, methods=['post'])
