@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import UserManager,AbstractUser
-
+import os
 
 
 
@@ -52,6 +52,20 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
+
+
+    def save(self, *args, **kwargs):
+        try:
+            old_image = CustomUser.objects.get(id=self.pk).image
+        except CustomUser.DoesNotExist:
+            old_image = None
+
+        if old_image and self.image and old_image != self.image:
+            default_image_path = 'users/default/default_profile.jpg'    
+            if default_image_path != old_image.path:
+                if os.path.isfile(old_image.name):
+                    os.remove(old_image.path)
+        return super().save(*args,**kwargs)
 
 
 
