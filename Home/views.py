@@ -175,30 +175,14 @@ class ChatViewSet(viewsets.ModelViewSet):
 
         return Response(serialized_message, status=status.HTTP_201_CREATED)
     
-
-    @action(detail=True, methods=['post'])
-    def make_all_message_seen(self, request, pk=None):
-        chat = self.get_object()
-        filtered_by_chat = Message.objects.filter(chat=chat, status="never seen")
-        messages = filtered_by_chat.exclude(sender=request.user)
-        
-        for message in messages:
-            try :
-                message.status = "seen"
-                message.save()
-            except Message.DoesNotExist:
-                pass
-            except Exception as e:
-                raise e
-        return Response({"message":"all messages changed as seen"})
-
     @action(detail=False, methods=['post'])
     def handle_message_seen(self, request):
-        message_ids = request.data.get('seenMsgIds')
         chat_id = request.data.get('chatId')
+        message_ids = request.data.get('seenMsgIds')
+        targetUserId = request.data.get('targetUserId')
 
         channel_layer = get_channel_layer()
-        group_name = f"chat_{chat_id}"
+        group_name = f"notification_{targetUserId}"
 
         for i in message_ids:
             try :
