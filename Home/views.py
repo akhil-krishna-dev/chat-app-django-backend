@@ -207,7 +207,6 @@ class ChatViewSet(viewsets.ModelViewSet):
         return Response({"message":"success"}, status=status.HTTP_200_OK)
 
         
-
     def create(self, request, *args, **kwargs):
         participants = request.data.get('participants')
 

@@ -27,6 +27,9 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
         await self.notify_online_users("send_online_status",self.chat_related_users_id)
 
     async def receive(self, text_data=None):
+        # ------ channer layer 
+        channel_layer = get_channel_layer()  
+        # ------
         data = json.loads(text_data)
         message_type = data.get('type')
         payload_data = data.get('data')
@@ -39,7 +42,6 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
             target_user_id = message_data['target_user_id']
             target_user_group = f"notification_{target_user_id}"
             request_user_group = f"notification_{self.request_user.id}"
-            channel_layer = get_channel_layer()  
 
             await channel_layer.group_send(
                 request_user_group,
@@ -62,7 +64,7 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
         if message_type == "online":
             participant_id = payload_data['user_id']  
             target_user_group = f"notification_{participant_id}"
-            channel_layer = get_channel_layer()
+
             await channel_layer.group_send(
                 target_user_group,
                 {
@@ -76,17 +78,15 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
         # Video call handling section starts <<<<<<<<<<<---------->>>>>>>>>>>>>>>
         # offer received from caller section ---->>>>>>
         if message_type == "offer":
-            offer = payload_data['offer']
-            channel_layer = get_channel_layer()  
+
+            payload_data['created_user_db_id'] = self.request_user.id
+
             target_user_group = f"notification_{payload_data['targetUserId']}"
             await channel_layer.group_send(
                 target_user_group,
                 {
                     "type":"send_webrtc_offer",
-                    "data":{
-                        "offer":offer,
-                        "created_user_db_id":self.request_user.id
-                    }
+                    "data":payload_data
                 }
             )
 
@@ -96,7 +96,6 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
             answer = payload_data['answer']
 
             target_user_group = f"notification_{targetUserId}"
-            channel_layer = get_channel_layer()
 
             await channel_layer.group_send(
                 target_user_group,
@@ -116,7 +115,6 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
             candidate = payload_data["candidate"]
 
             target_user_group = f"notification_{targetUserId}"
-            channel_layer = get_channel_layer()
 
             await channel_layer.group_send(
                 target_user_group,
@@ -134,7 +132,6 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
                 targetUserId = payload_data['targetUserId']
 
                 target_user_group = f"notification_{targetUserId}"
-                channel_layer = get_channel_layer()
 
                 await channel_layer.group_send(
                     target_user_group,
@@ -149,12 +146,37 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
                 targetUserId = payload_data['targetUserId']
 
                 target_user_group = f"notification_{targetUserId}"
-                channel_layer = get_channel_layer()
 
                 await channel_layer.group_send(
                     target_user_group,
                     {"type":"send_disconnected_message"}
                 )
+
+                call_details = payload_data['callDetails']
+                chat_id = await self.get_chat_id(targetUserId)
+                message_data = None
+
+                message_data = await self.save_message(chat_id, call_details)
+
+                request_user_group = f"notification_{self.request_user.id}"
+                target_user_group = f"notification_{targetUserId}"
+
+                await channel_layer.group_send(
+                    request_user_group,
+                    {
+                        'type': 'send_notification',
+                        'message': message_data                  
+                    }
+                )  
+
+                await channel_layer.group_send(
+                    target_user_group,
+                    {
+                        'type': 'send_notification',
+                        'message': message_data                  
+                    }
+                )        
+
             except:
                 pass
 
@@ -169,6 +191,7 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+    # 
     #  all methods ---------------->>>>>>>>>>
     async def notify_online_users(self, type=None, participants = []):
         data =  {
@@ -330,5 +353,12 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
         user.save()
         return user.last_seen
     
+    @database_sync_to_async
+    def get_chat_id(self, target_user_id):
+        try:
+           chat = Chat.objects.filter(participants__id= self.request_user.id)
+           return chat.get(participants__id=target_user_id).pk     
+        except:
+            return None
 
 
