@@ -48,9 +48,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -59,9 +59,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default=[]).split(",")
 
 ROOT_URLCONF = 'chat_app_backend.urls'
 
