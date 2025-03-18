@@ -293,6 +293,12 @@ class NotificatonConsumer(AsyncWebsocketConsumer):
             "type":"disconnected"
         }))
 
+    async def make_all_messages_as_seen(self, event):
+        data = event['data']
+        await self.send(text_data=json.dumps({
+            'type':"all messages have been read",
+            'data':data
+        }))
 
     # ------------------->>>>>>>>>>>>>>>>>>>>>>>>
     # Databse operations ------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

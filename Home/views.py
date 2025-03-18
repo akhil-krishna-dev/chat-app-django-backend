@@ -205,7 +205,36 @@ class ChatViewSet(viewsets.ModelViewSet):
         )
 
         return Response({"message":"success"}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def make_all_messages_seen(self, request, pk=None):
+        chat = self.get_object()
+        messages = Message.objects.filter(chat=chat).filter(status="never seen")
+        messages_id = []
 
+        for message in messages:
+            message.status = "seen"
+            message.save()
+            messages_id.append(message.pk)
+
+        targetUserId = chat.participants.exclude(id=request.user.id).first().id
+
+        channel_layer = get_channel_layer()
+        group_name = f"notification_{targetUserId}"
+
+        async_to_sync(channel_layer.group_send)(
+            group_name,{
+                'type':'make_all_messages_as_seen',
+                'data':chat.id
+            }
+        )
+
+        data = {"message":"all messages have been made as seen"}
+
+        return Response(data, status=status.HTTP_200_OK)
+
+        
+    
         
     def create(self, request, *args, **kwargs):
         participants = request.data.get('participants')
